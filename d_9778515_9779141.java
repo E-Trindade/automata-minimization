@@ -1,4 +1,5 @@
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,9 +37,10 @@ class Automaton {
 
 }
 
-class d_9778515_9779141 {
-    public static void main(String[] args) throws IOException {
-        Scanner scanner = new Scanner(new FileReader(args[0]));
+class AutomatonLoader {
+
+    public static Automaton loadFromFile(FileReader fileReader) {
+        Scanner scanner = new Scanner(fileReader);
         int statesCount = scanner.nextInt();
         int alphabetRange = scanner.nextInt();
         int initialState = scanner.nextInt();
@@ -71,5 +73,16 @@ class d_9778515_9779141 {
         }
 
         scanner.close();
+        return automaton;
+    }
+
+    public static void dumpIntoFile(Automaton automaton, FileWriter writer){
+
+    }
+}
+
+public class d_9778515_9779141 {
+    public static void main(String[] args) throws IOException {
+        Automaton automaton = AutomatonLoader.loadFromFile(new FileReader(args[0]));
     }
 }
