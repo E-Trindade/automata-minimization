@@ -167,7 +167,7 @@ class AutomatonLoader {
     }
 }
 
-public class d_9778515_9779141 {
+public class minimiza {
     public static void main(String[] args) throws IOException {
         FileReader reader = new FileReader(args[0]);
         Automaton automaton = AutomatonLoader.loadFromFile(reader);

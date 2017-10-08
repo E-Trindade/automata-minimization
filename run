@@ -1,1 +1,1 @@
-javac *.java; java d_9778515_9779141 data/in/afd2.txt data/out/afd2.txt;
+javac *.java; java minimiza data/in/afd2.txt data/out/afd2.txt;
