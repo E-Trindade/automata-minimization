@@ -48,6 +48,12 @@ class Automaton {
         return stateTransitions.get(key);
     }
 
+    public void normalizeIds() {
+        for (int i = 0; i < this.states.size(); i++) {
+            this.states.get(i).id = i;
+        }
+    }
+
     public void remove(State state) {
         this.states.remove(state);
         this.transitions.remove(state);
@@ -67,9 +73,10 @@ class Automaton {
 
 }
 
-class AutomatonExplorer {
+class AutomatonReducer {
     public static void reduceAutomaton(Automaton automaton) {
         removeUnreachableStates(automaton);
+        removeUselessStates(automaton);
     }
 
     private static void removeUnreachableStates(Automaton automaton) {
@@ -80,11 +87,11 @@ class AutomatonExplorer {
         Set<State> statesToRemove = new HashSet<State>(automaton.states);
         statesToRemove.removeAll(visited);
 
-        for (State s : statesToRemove){
-            System.out.println("Removing " + s);
+        for (State s : statesToRemove) {
+            System.out.println("Unreachable: Removing " + s);
             automaton.remove(s);
         }
-
+        automaton.normalizeIds();
     }
 
     private static void visitNodes(Automaton automaton, State currentState, Set<State> visited) {
@@ -92,6 +99,36 @@ class AutomatonExplorer {
         for (State state : automaton.getTransitionsFor(currentState).values()) {
             if (state != null && !visited.contains(state))
                 visitNodes(automaton, state, visited);
+        }
+    }
+
+    private static void removeUselessStates(Automaton automaton) {
+        Set<State> toRemove = new HashSet<State>();
+        checkIfIsUseless(automaton, automaton.initialState, new HashSet<State>(), toRemove);
+
+        for (State s : toRemove) {
+            System.out.println("Useless: Removing " + s);
+            automaton.remove(s);
+        }
+        automaton.normalizeIds();
+    }
+
+    private static void checkIfIsUseless(Automaton automaton, State currentState, Set<State> superVisited,
+            Set<State> toRemove) {
+        superVisited.add(currentState);
+        Set<State> visited = new HashSet<State>();
+
+        visitNodes(automaton, currentState, visited);
+        boolean canGoToAcceptanceFromHere = false;
+        for (State s : visited)
+            if (s.isAcceptance)
+                canGoToAcceptanceFromHere = true;
+        if (!canGoToAcceptanceFromHere)
+            toRemove.add(currentState);
+
+        for (State state : automaton.getTransitionsFor(currentState).values()) {
+            if (state != null && !superVisited.contains(state))
+                checkIfIsUseless(automaton, state, superVisited, toRemove);
         }
 
     }
@@ -173,7 +210,7 @@ public class minimiza {
         Automaton automaton = AutomatonLoader.loadFromFile(reader);
         reader.close();
 
-        AutomatonExplorer.reduceAutomaton(automaton);
+        AutomatonReducer.reduceAutomaton(automaton);
 
         FileWriter writer = new FileWriter(args[1]);
         AutomatonLoader.dumpIntoFile(automaton, writer);
