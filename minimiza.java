@@ -77,7 +77,7 @@ class AutomatonReducer {
     public static void reduceAutomaton(Automaton automaton) {
         removeUnreachableStates(automaton);
         removeUselessStates(automaton);
-        removeRedundantStates(automaton);
+        mergeEquivalentStates(automaton);
     }
 
     private static void removeUnreachableStates(Automaton automaton) {
@@ -134,30 +134,31 @@ class AutomatonReducer {
 
     }
 
-    private static void removeRedundantStates(Automaton automaton) {
+    private static void mergeEquivalentStates(Automaton automaton) {
         for (int i = 0; i < automaton.states.size() - 1; i++) {
             for (int j = i + 1; j < automaton.states.size(); j++) {
-                checkStatesForEquivalence(automaton, automaton.getState(i), automaton.getState(j), new HashSet<State>(), new HashSet<State>());
+                boolean equivalent = checkStatesForEquivalence(automaton, automaton.getState(i), automaton.getState(j), new HashSet<State>(), new HashSet<State>());
+                if(equivalent)
+                    System.out.println("Equivalent: " + automaton.getState(i) + " and " + automaton.getState(j));
             }
         }
     }
 
     private static boolean checkStatesForEquivalence(Automaton automaton, State state1, State state2, Set<State> visited1, Set<State> visited2) {
         if (state1 != null)
-            visited1.add(state1);
+        visited1.add(state1);
         if (state2 != null)
-            visited2.add(state2);
-
+        visited2.add(state2);
+        
         if (state1 == state2) {
-            if(state1 != null)
-                System.out.println(state1 + " == " + state2);
             return true;
         }
+
         if (state1 == null || state2 == null)
             return false;
         if (state1.isAcceptance != state2.isAcceptance)
             return false;
-
+            
         for (int key = 0; key < automaton.alphabetRange; key++) {
             State newState1 = automaton.getNextState(state1, key);
             State newState2 = automaton.getNextState(state2, key);
