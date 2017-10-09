@@ -133,15 +133,41 @@ class AutomatonReducer {
         }
 
     }
-
+    
     private static void mergeEquivalentStates(Automaton automaton) {
+        Map<State, State> toReplace = new HashMap<>();
         for (int i = 0; i < automaton.states.size() - 1; i++) {
             for (int j = i + 1; j < automaton.states.size(); j++) {
                 boolean equivalent = checkStatesForEquivalence(automaton, automaton.getState(i), automaton.getState(j), new HashSet<State>(), new HashSet<State>());
-                if(equivalent)
+                if(equivalent) {
                     System.out.println("Equivalent: " + automaton.getState(i) + " and " + automaton.getState(j));
+                    toReplace.put(automaton.getState(i), automaton.getState(j));
+                }
             }
         }
+        
+        for(Entry<State, State> e : toReplace.entrySet()){
+            State removed = e.getKey();
+            State appointed = e.getValue();
+
+            for(Map<Integer, State> transition : automaton.transitions.values()){
+                Set<Integer> keysToReplace = new HashSet<>();
+                for(Entry<Integer, State> e2: transition.entrySet()){
+                    if(e2.getValue() == removed)
+                    keysToReplace.add(e2.getKey());
+                }
+                
+                for(Integer i: keysToReplace){
+                    System.out.println(removed.id + " " + i);
+                    transition.put(i, appointed);
+                }
+            }
+        }
+
+        for (State state : toReplace.keySet()) {
+            automaton.remove(state);
+        }
+        automaton.normalizeIds();
     }
 
     private static boolean checkStatesForEquivalence(Automaton automaton, State state1, State state2, Set<State> visited1, Set<State> visited2) {
