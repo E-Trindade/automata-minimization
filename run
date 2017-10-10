@@ -1,1 +1,1 @@
-javac *.java; java minimiza data/in/afd3.txt data/out/afd3.txt;
+javac *.java; java minimiza data/in/afd4.txt data/out/afd4.txt;

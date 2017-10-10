@@ -1,3 +1,11 @@
+
+/**
+ * Grupo: 
+ * Eder Gabriel da Trindade Félix,      nUsp: 9778515
+ * Handrés​ Aparecido​ ​Idepski​ Povidaiko, nUsp: 9779141
+ * Turma 94
+ */
+
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,6 +19,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.Map.Entry;
 
+// Representation of a state
 class State {
     int id;
     boolean isAcceptance;
@@ -22,10 +31,13 @@ class State {
 }
 
 class Automaton {
-
+    // Automaton state list.
+    // (StateId) -> state
     List<State> states = new ArrayList<State>();
+    // Transitions: (State) -> (Key) -> State
     Map<State, Map<Integer, State>> transitions = new HashMap<>();
     State initialState;
+    // Automaton alphabet ranges from 0..alphabetRange
     int alphabetRange;
 
     public Automaton() {
@@ -48,6 +60,7 @@ class Automaton {
         return stateTransitions.get(key);
     }
 
+    // Ensures automata.states[i] has id == i
     public void normalizeIds() {
         for (int i = 0; i < this.states.size(); i++) {
             this.states.get(i).id = i;
@@ -55,8 +68,10 @@ class Automaton {
     }
 
     public void remove(State state) {
+        //Remove state
         this.states.remove(state);
         this.transitions.remove(state);
+        // ANd all transitions that lead to him
         for (Map<Integer, State> localTransitions : this.transitions.values()) {
             Set<Integer> keysToRemove = new HashSet<Integer>();
             if (localTransitions == null)
@@ -74,12 +89,14 @@ class Automaton {
 }
 
 class AutomatonReducer {
+    // Simplify automaton, through a series of steps
     public static void reduceAutomaton(Automaton automaton) {
         removeUnreachableStates(automaton);
         removeUselessStates(automaton);
         mergeEquivalentStates(automaton);
     }
 
+    // Remove states that are no reachable from initial state
     private static void removeUnreachableStates(Automaton automaton) {
         Set<State> visited = new HashSet<State>();
         State currentState = automaton.initialState;
@@ -89,12 +106,12 @@ class AutomatonReducer {
         statesToRemove.removeAll(visited);
 
         for (State s : statesToRemove) {
-            System.out.println("Unreachable: Removing " + s);
             automaton.remove(s);
         }
         automaton.normalizeIds();
     }
 
+    // Simple Method for depth search (recursive)
     private static void visitNodes(Automaton automaton, State currentState, Set<State> visited) {
         visited.add(currentState);
         for (State state : automaton.getTransitionsFor(currentState).values()) {
@@ -103,12 +120,12 @@ class AutomatonReducer {
         }
     }
 
+    // Remove states that arent't and don't lead to an acceptance state
     private static void removeUselessStates(Automaton automaton) {
         Set<State> toRemove = new HashSet<State>();
         checkIfIsUseless(automaton, automaton.initialState, new HashSet<State>(), toRemove);
 
         for (State s : toRemove) {
-            System.out.println("Useless: Removing " + s);
             automaton.remove(s);
         }
         automaton.normalizeIds();
@@ -120,6 +137,7 @@ class AutomatonReducer {
         Set<State> visited = new HashSet<State>();
 
         visitNodes(automaton, currentState, visited);
+        // if self and every descendant are not acceptance states, this is an useless state
         boolean canGoToAcceptanceFromHere = false;
         for (State s : visited)
             if (s.isAcceptance)
@@ -133,32 +151,37 @@ class AutomatonReducer {
         }
 
     }
-    
+
+    /**
+     *  Check every tuple of States (A, B) for:
+     *  For every sequence of input [a1, a2, a3, ...], if A and B have the same transitions (in terms of acceptance states),
+     *  then they are equivalent, and can be merged as one state.
+     *  This search is implemented with a simultaneous depth search from A and B.
+     */
     private static void mergeEquivalentStates(Automaton automaton) {
         Map<State, State> toReplace = new HashMap<>();
         for (int i = 0; i < automaton.states.size() - 1; i++) {
             for (int j = i + 1; j < automaton.states.size(); j++) {
                 boolean equivalent = checkStatesForEquivalence(automaton, automaton.getState(i), automaton.getState(j), new HashSet<State>(), new HashSet<State>());
-                if(equivalent) {
-                    System.out.println("Equivalent: " + automaton.getState(i) + " and " + automaton.getState(j));
+                if (equivalent) {
                     toReplace.put(automaton.getState(i), automaton.getState(j));
                 }
             }
         }
-        
-        for(Entry<State, State> e : toReplace.entrySet()){
+
+        //Update all references of toBeRemoved state, then remove it.
+        for (Entry<State, State> e : toReplace.entrySet()) {
             State removed = e.getKey();
             State appointed = e.getValue();
 
-            for(Map<Integer, State> transition : automaton.transitions.values()){
+            for (Map<Integer, State> transition : automaton.transitions.values()) {
                 Set<Integer> keysToReplace = new HashSet<>();
-                for(Entry<Integer, State> e2: transition.entrySet()){
-                    if(e2.getValue() == removed)
-                    keysToReplace.add(e2.getKey());
+                for (Entry<Integer, State> e2 : transition.entrySet()) {
+                    if (e2.getValue() == removed)
+                        keysToReplace.add(e2.getKey());
                 }
-                
-                for(Integer i: keysToReplace){
-                    System.out.println(removed.id + " " + i);
+
+                for (Integer i : keysToReplace) {
                     transition.put(i, appointed);
                 }
             }
@@ -170,12 +193,14 @@ class AutomatonReducer {
         automaton.normalizeIds();
     }
 
+    // Works like a simultaneous depth search in state1 and state2. 
+    // Checks for difference in isAcceptance and nullity between the two.
     private static boolean checkStatesForEquivalence(Automaton automaton, State state1, State state2, Set<State> visited1, Set<State> visited2) {
         if (state1 != null)
-        visited1.add(state1);
+            visited1.add(state1);
         if (state2 != null)
-        visited2.add(state2);
-        
+            visited2.add(state2);
+
         if (state1 == state2) {
             return true;
         }
@@ -184,7 +209,7 @@ class AutomatonReducer {
             return false;
         if (state1.isAcceptance != state2.isAcceptance)
             return false;
-            
+
         for (int key = 0; key < automaton.alphabetRange; key++) {
             State newState1 = automaton.getNextState(state1, key);
             State newState2 = automaton.getNextState(state2, key);
@@ -202,8 +227,10 @@ class AutomatonReducer {
     }
 }
 
+// Class for IO and Automaton parsing, as specified in the assignment.
 class AutomatonLoader {
 
+    // Loads automaton from input file, 
     public static Automaton loadFromFile(FileReader fileReader) {
         Scanner scanner = new Scanner(fileReader);
         int statesCount = scanner.nextInt();
@@ -220,7 +247,6 @@ class AutomatonLoader {
             state.id = i;
             state.isAcceptance = scanner.nextInt() == 1;
             automaton.states.add(i, state);
-            System.out.println(state);
         }
 
         automaton.initialState = automaton.getState(initialState);
@@ -234,15 +260,14 @@ class AutomatonLoader {
                 int nextStateId = scanner.nextInt();
                 State nextState = nextStateId == -1 ? null : automaton.getState(nextStateId);
                 automaton.transitions.get(state).put(symbol, nextState);
-                System.out.print(nextStateId + " ");
             }
-            System.out.println();
         }
 
         scanner.close();
         return automaton;
     }
 
+    // Writes automaton into output file.
     public static void dumpIntoFile(Automaton automaton, FileWriter writer) {
         PrintWriter printer = new PrintWriter(writer);
         printer.println(automaton.states.size() + " " + // State Count
@@ -271,8 +296,12 @@ class AutomatonLoader {
     }
 }
 
+// Main class
 public class minimiza {
+    // Read automata from file, reduce, then dump it.
+    // Input and output files names come from args
     public static void main(String[] args) throws IOException {
+
         FileReader reader = new FileReader(args[0]);
         Automaton automaton = AutomatonLoader.loadFromFile(reader);
         reader.close();
